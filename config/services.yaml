@@ -15,3 +15,11 @@ services:
         resource: '../src/*'
         exclude: '../src/{Entity,Migrations,Tests,Kernel.php}'
 
+    instagram.client.http:
+        public: true
+        class: xyz13\InstagramBundle\Client\HttpClient
+
+    instagram.web_driver.factory:
+        class: xyz13\InstagramBundle\Instagram\Factory
+        arguments:
+            - "@instagram.client.http"
