@@ -1,0 +1,17 @@
+{
+  "name": "xyz13/instagram-bundle",
+  "type": "symfony-bundle",
+  "description": "Instagram Web Bundle",
+  "keywords": ["symfony"],
+  "autoload": {
+    "psr-4": {
+      "xyz13\\InstagramBundle\\": ""
+    }
+  },
+  "require": {
+    "php": ">=7.0.0",
+    "facebook/webdriver": "^1.5",
+    "guzzlehttp/psr7": "^1.4"
+  },
+  "bin": ["bin/server.php"]
+}
