@@ -23,3 +23,13 @@ services:
         class: xyz13\InstagramBundle\Instagram\Factory
         arguments:
             - "@instagram.client.http"
+
+    instagram.web_driver.logger:
+        class: Monolog\Logger
+        arguments: ["instagram.web_driver.logger"]
+        calls:
+          - [pushHandler, ["@instagram.web_driver.stream_handler"]]
+
+    instagram.web_driver.stream_handler:
+        class: Monolog\Handler\StreamHandler
+        arguments: [%kernel.logs_dir%/%kernel.environment%.web_driver.log, 100]

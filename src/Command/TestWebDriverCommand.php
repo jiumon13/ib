@@ -2,8 +2,6 @@
 
 namespace xyz13\InstagramBundle\Command;
 
-use App\Instagram\WebDriver;
-use App\Instagram\InstagramWebDriverFactory;
 use Doctrine\DBAL\LockMode;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
