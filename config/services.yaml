@@ -5,7 +5,7 @@ services:
         public: true
         class: xyz13\InstagramBundle\Client\HttpClient
 
-    instagram.web_driver.factory:
+    xyz13\InstagramBundle\Instagram\Factory:
         class: xyz13\InstagramBundle\Instagram\Factory
         arguments:
             - "@instagram.client.http"
