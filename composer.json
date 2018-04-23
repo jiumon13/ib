@@ -5,7 +5,7 @@
   "keywords": ["symfony"],
   "autoload": {
     "psr-4": {
-      "xyz13\\InstagramBundle\\": ""
+      "xyz13\\InstagramBundle\\": "src/"
     }
   },
   "require": {
