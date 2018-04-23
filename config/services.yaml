@@ -1,10 +1,6 @@
 parameters:
 
 services:
-    instagram.web_driver:
-        public: true
-        factory: 'xyz13\InstagramBundle\Instagram\Factory:get'
-
     instagram.client.http:
         public: true
         class: xyz13\InstagramBundle\Client\HttpClient
@@ -13,6 +9,11 @@ services:
         class: xyz13\InstagramBundle\Instagram\Factory
         arguments:
             - "@instagram.client.http"
+
+    instagram.web_driver:
+        class: xyz13\InstagramBundle\Instagram\Instagram
+        public: true
+        factory: 'xyz13\InstagramBundle\Instagram\Factory:get'
 
     instagram.web_driver.logger:
         class: Monolog\Logger
