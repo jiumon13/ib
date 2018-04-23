@@ -38,8 +38,8 @@ class Factory
 
         if (null !== $sessionId) {
             $webDriver = RemoteWebDriver::createBySessionID(
-                    $sessionId,
-                    'http://browser:4444/wd/hub'
+                $sessionId,
+                'http://browser:4444/wd/hub'
             );
         } else {
             $webDriver = RemoteWebDriver::create(
