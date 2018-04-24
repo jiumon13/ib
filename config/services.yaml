@@ -4,7 +4,8 @@ parameters:
 services:
     redis:
         factory: 'Symfony\Component\DependencyInjection\ContainerInterface:get'
-        arguments: '%redis.service_name%'
+        arguments:
+            - '%redis.service_name%'
 
     instagram.client.http:
         public: true
