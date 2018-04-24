@@ -1,6 +1,11 @@
 parameters:
+    redis.service_name: 'redis'
 
 services:
+    redis:
+        factory: 'Symfony\Component\DependencyInjection\ContainerInterface:get'
+        arguments: '%redis.service_name%'
+
     instagram.client.http:
         public: true
         class: xyz13\InstagramBundle\Client\HttpClient
@@ -8,6 +13,8 @@ services:
     xyz13\InstagramBundle\Instagram\Factory:
         class: xyz13\InstagramBundle\Instagram\Factory
         arguments:
+            - "@redis"
+            - "@kernel"
             - "@instagram.client.http"
 
     instagram.web_driver:
