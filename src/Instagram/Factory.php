@@ -11,6 +11,7 @@ use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use inisire\ReactBundle\EventDispatcher\ThreadedKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Facebook\WebDriver\Remote\DriverCommand;
 
 class Factory
 {
