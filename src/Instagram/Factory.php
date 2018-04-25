@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\Request;
 use xyz13\InstagramBundle\Client\HttpClient;
 use Facebook\WebDriver\Exception\UnknownServerException;
 use Facebook\WebDriver\Exception\NoSuchWindowException;
+use Facebook\WebDriver\Exception\NoSuchDriverException;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use inisire\ReactBundle\EventDispatcher\ThreadedKernelInterface;
