@@ -74,7 +74,9 @@ class Factory
             }
 
         }
-        
+
+        $instagram->getWebDriver()->execute(DriverCommand::MAXIMIZE_WINDOW);
+
         return $instagram;
     }
 

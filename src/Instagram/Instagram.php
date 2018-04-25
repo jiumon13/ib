@@ -514,4 +514,12 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
 
         return json_decode($data, true)['author_name'];
     }
+
+    /**
+     * @return RemoteWebDriver
+     */
+    public function getWebDriver()
+    {
+        return $this->webDriver;
+    }
 }
