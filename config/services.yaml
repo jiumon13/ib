@@ -21,7 +21,7 @@ services:
     instagram.web_driver:
         class: xyz13\InstagramBundle\Instagram\Instagram
         public: true
-        factory: 'xyz13\InstagramBundle\Instagram\Factory:get'
+        factory: 'xyz13\InstagramBundle\Instagram\Factory:create'
 
     instagram.web_driver.logger:
         class: Monolog\Logger
