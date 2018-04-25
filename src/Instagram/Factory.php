@@ -54,28 +54,28 @@ class Factory
 
         if ($session == false) {
 
-            $webDriver = $this->createNewSession();
+            $instagram = $this->createNewSession();
 
         } else {
 
             try {
-                $webDriver = new Instagram(
-                    RemoteWebDriver::createBySessionID(
-                        $session,
-                        'http://browser:4444/wd/hub'
-                    )
+                $webDriver = RemoteWebDriver::createBySessionID(
+                    $session,
+                    'http://browser:4444/wd/hub'
                 );
 
                 $webDriver->getCurrentUrl();
+
+                $instagram = new Instagram($webDriver);
             } catch (UnknownServerException $e) {
-                $webDriver = $this->createNewSession();
+                $instagram = $this->createNewSession();
             } catch (NoSuchWindowException $e) {
-                $webDriver = $this->createNewSession();
+                $instagram = $this->createNewSession();
             }
 
         }
         
-        return $webDriver;
+        return $instagram;
     }
 
     /**
@@ -99,12 +99,12 @@ class Factory
             DesiredCapabilities::chrome()
         );
 
-        $webDriver = new Instagram($webDriver);
+        $instagram = new Instagram($webDriver);
 
         $session = $webDriver->getSessionID();
         $this->redis->set($this->getSessionRedisKey(), $session);
 
-        return $webDriver;
+        return $instagram;
     }
 
     /**
