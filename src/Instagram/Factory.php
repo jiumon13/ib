@@ -71,6 +71,8 @@ class Factory
                 $instagram = $this->createNewSession();
             } catch (NoSuchWindowException $e) {
                 $instagram = $this->createNewSession();
+            } catch (NoSuchDriverException $e) {
+                $instagram = $this->createNewSession();
             }
 
         }
