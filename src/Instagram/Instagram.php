@@ -300,18 +300,22 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
         $this->openTab();
         $this->webDriver->navigate()->to($link);
 
-        $this
-            ->webDriver
-            ->wait()
-            ->until(
-                WebDriverExpectedCondition::presenceOfElementLocated(
-                    WebDriverBy::xpath('//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li')
-                )
-            );
+        try {
+            $this
+                ->webDriver
+                ->wait()
+                ->until(
+                    WebDriverExpectedCondition::presenceOfElementLocated(
+                        WebDriverBy::xpath('//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li')
+                    )
+                );
 
-        $elements = $this->webDriver->findElements(WebDriverBy::xpath(
-            '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
-        ));
+            $elements = $this->webDriver->findElements(WebDriverBy::xpath(
+                '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
+            ));
+        } catch (NoSuchElementException $e) {
+            return false;
+        }
 
         $i = 0;
         $k = 0;
