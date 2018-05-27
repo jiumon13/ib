@@ -89,7 +89,7 @@ class Factory
      */
     private function getSessionRedisKey()
     {
-        return sprintf('thread_%d_session_id', $this->kernel->getThreadNumber());
+        return sprintf('thread_%d_session_id', 1);
     }
 
     /**
