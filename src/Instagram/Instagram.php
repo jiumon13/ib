@@ -295,7 +295,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
      *
      * @return bool
      */
-    public function isCommentatorExist(string $link, string $commentatorIsLookingFor)
+    public function findCommentByCommentator(string $link, string $commentatorIsLookingFor)
     {
         $this->openTab();
         $this->webDriver->navigate()->to($link);
@@ -314,7 +314,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
                 '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
             ));
         } catch (NoSuchElementException $e) {
-            return false;
+            return null;
         }
 
         $i = 0;
@@ -330,7 +330,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
 
                 if ($commentator == $commentatorIsLookingFor) {
                     $this->closeTab();
-                    return true;
+                    return $comment;
                 }
 
                 if ($commentator == sprintf('View all %s comments', $comment)) {
@@ -372,7 +372,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
 
         $this->closeTab();
 
-        return false;
+        return null;
     }
 
     /**
@@ -382,7 +382,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
      *
      * @return bool
      */
-    public function isCommentExist(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor)
+    public function findComment(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor)
     {
         $this->openTab();
         $this->webDriver->navigate()->to($link);
@@ -401,7 +401,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
                 '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
             ));
         } catch (NoSuchElementException $e) {
-            return false;
+            return null;
         }
 
         $i = 0;
@@ -417,7 +417,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
 
                 if ($commentator == $commentatorIsLookingFor && $comment == $commentIsLookingFor) {
                     $this->closeTab();
-                    return true;
+                    return $comment;
                 }
 
                 if ($commentator == sprintf('View all %s comments', $comment)) {
@@ -459,7 +459,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
 
         $this->closeTab();
 
-        return false;
+        return null;
     }
 
     private function closeTab()
