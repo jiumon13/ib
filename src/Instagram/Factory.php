@@ -31,17 +31,24 @@ class Factory
     private $client;
 
     /**
+     * @var int
+     */
+    private $processNumber;
+
+    /**
      * InstagramWebDriverFactory constructor.
      *
      * @param \Redis          $redis
      * @param KernelInterface $kernel
      * @param HttpClient      $client
+     * @param int             $processNumber
      */
-    public function __construct(\Redis $redis, KernelInterface $kernel, HttpClient $client)
+    public function __construct(\Redis $redis, KernelInterface $kernel, HttpClient $client, int $processNumber = 0)
     {
         $this->redis = $redis;
         $this->kernel = $kernel;
         $this->client = $client;
+        $this->processNumber = $processNumber;
     }
 
     /**
@@ -89,7 +96,7 @@ class Factory
      */
     private function getSessionRedisKey()
     {
-        return sprintf('thread_%d_session_id', 1);
+        return sprintf('thread_%d_session_id', $this->processNumber);
     }
 
     /**
