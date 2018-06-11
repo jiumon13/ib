@@ -1,5 +1,6 @@
 parameters:
     redis.service_name: 'redis'
+    process.id: 0
 
 services:
     redis:
@@ -17,6 +18,7 @@ services:
             - "@redis"
             - "@kernel"
             - "@instagram.client.http"
+            - "%process.id%"
 
     instagram.web_driver:
         class: xyz13\InstagramBundle\Instagram\Instagram
