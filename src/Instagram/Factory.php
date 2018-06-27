@@ -134,17 +134,6 @@ class Factory
 
     private function authorize()
     {
-//        $login = 'iframe_alina';
-//        $password = '199696';
-//        $login = 'blessed_staff_bot';
-//        $password = 'caribbean13121996';
-//        $login = 'ilona_garkusha';
-//        $password = '1234567890Aa';
-//        $login = 'prodam_svoe_tebe';
-//        $password = '199696';
-//        $login = 'ilikeit2939';
-//        $password = 'ju789lkixyz';
-//
 //        $webDriver->navigate()->refresh();
 //        $webDriver->get('https://instagram.com');
 //        $this->driver->execute(DriverCommand::MAXIMIZE_WINDOW);
