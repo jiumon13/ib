@@ -515,6 +515,38 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
     }
 
     /**
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function isProfileClosed(string $name)
+    {
+        $this->openTab();
+        $this->webDriver->navigate()->to('https://www.instagram.com/' . $name);
+
+        try {
+            $this
+                ->webDriver
+                ->wait()
+                ->until(
+                    WebDriverExpectedCondition::presenceOfElementLocated(
+                        WebDriverBy::xpath('//*[contains(text(), "This Account is Private")]')
+                    )
+                );
+
+            $this->webDriver->findElement(WebDriverBy::xpath('//*[contains(text(), "This Account is Private")]'));
+
+            $this->closeTab();
+
+            return true;
+        } catch (NoSuchElementException $e) {
+            $this->closeTab();
+
+            return false;
+        }
+    }
+
+    /**
      * @return RemoteWebDriver
      */
     public function getWebDriver()
