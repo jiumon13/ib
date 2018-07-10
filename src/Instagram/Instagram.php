@@ -41,7 +41,7 @@ class Instagram implements InstagramInterface
 
         $this
             ->webDriver
-            ->wait()
+            ->wait(8)
             ->until(
                 WebDriverExpectedCondition::presenceOfElementLocated(
                     WebDriverBy::xpath('//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li')
@@ -118,7 +118,7 @@ class Instagram implements InstagramInterface
 
         $this->webDriver->navigate()->to($link);
 
-        $this->webDriver->wait()->until(WebDriverExpectedCondition::elementToBeClickable(WebDriverBy::xpath('//a[contains(@href, "liked_by")]')));
+        $this->webDriver->wait(8)->until(WebDriverExpectedCondition::elementToBeClickable(WebDriverBy::xpath('//a[contains(@href, "liked_by")]')));
         $element = $this->webDriver->findElement(WebDriverBy::xpath('//a[contains(@href, "liked_by")]'));
 
 //        $this->driver->action()->moveToElement($element);
@@ -128,7 +128,7 @@ class Instagram implements InstagramInterface
 
         $this
             ->webDriver
-            ->wait()
+            ->wait(8)
             ->until(
                 function () {
                     $elements = $this->webDriver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
@@ -145,7 +145,7 @@ class Instagram implements InstagramInterface
             $element = array_shift($elements);
 
             try {
-                $this->webDriver->wait()->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
+                $this->webDriver->wait(8)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
                 $likers[] = $element->findElement(WebDriverBy::cssSelector('a:last-child'))->getText();
             } catch (\Exception $e) {
                 throw new WebDriverException($e->getMessage(), $e->getCode(), $e->getPrevious(), [
@@ -214,7 +214,7 @@ var_dump('isLikerExist: liked_by founded');
 var_dump('isLikerExist: click on liked_by and wait until likers list');
             $this
                 ->webDriver
-                ->wait()
+                ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
                         WebDriverBy::xpath('/html/body//ul/div/li')
@@ -229,7 +229,7 @@ var_dump('isLikerExist: found likers list');
 
                 try {
 var_dump('isLikerExist: wait until a:last-child');
-                    $this->webDriver->wait()->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
+                    $this->webDriver->wait(8)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
                     $liker = $element->findElement(WebDriverBy::cssSelector('a:last-child'))->getText();
 var_dump('isLikerExist: liker - ' . $liker);
 var_dump('isLikerExist: liker is looking for - ' . $likerIsLookingFor);
@@ -303,7 +303,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
         try {
             $this
                 ->webDriver
-                ->wait()
+                ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
                         WebDriverBy::xpath('//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li')
@@ -390,7 +390,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
         try {
             $this
                 ->webDriver
-                ->wait()
+                ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
                         WebDriverBy::xpath('//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li')
@@ -467,7 +467,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
         sleep(1);
         $this
             ->webDriver
-            ->wait()
+            ->wait(5)
             ->until(
                 WebDriverExpectedCondition::presenceOfElementLocated(
                     WebDriverBy::tagName('body')
@@ -487,7 +487,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
         sleep(1);
         $this
             ->webDriver
-            ->wait()
+            ->wait(5)
             ->until(
                 WebDriverExpectedCondition::presenceOfElementLocated(
                     WebDriverBy::tagName('body')
@@ -527,7 +527,7 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
         try {
             $this
                 ->webDriver
-                ->wait()
+                ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
                         WebDriverBy::xpath('//*[contains(text(), "This Account is Private")]')
