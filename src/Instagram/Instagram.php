@@ -190,16 +190,16 @@ class Instagram implements InstagramInterface
      */
     public function isLikerExist(string $link, string $likerIsLookingFor)
     {
-var_dump('isLikerExist: try open tab');
+        var_dump('isLikerExist: try open tab');
         $this->openTab();
-var_dump('isLikerExist: tab is opened');
+        var_dump('isLikerExist: tab is opened');
 
-var_dump('isLikerExist: navigate');
+        var_dump('isLikerExist: navigate');
         $this->webDriver->navigate()->to($link);
-var_dump('isLikerExist: current url = ' . $this->webDriver->getCurrentURL());
+        var_dump('isLikerExist: current url = ' . $this->webDriver->getCurrentURL());
 
         try {
-var_dump('isLikerExist: wait until liked by');
+            var_dump('isLikerExist: wait until liked by');
 
             $this->webDriver->wait(5)->until(
                 WebDriverExpectedCondition::elementToBeClickable(
@@ -208,10 +208,10 @@ var_dump('isLikerExist: wait until liked by');
                     )
                 )
             );
-var_dump('isLikerExist: liked_by founded');
+            var_dump('isLikerExist: liked_by founded');
             $element = $this->webDriver->findElement(WebDriverBy::xpath('//a[contains(@href, "liked_by")]'));
             $element->click();
-var_dump('isLikerExist: click on liked_by and wait until likers list');
+            var_dump('isLikerExist: click on liked_by and wait until likers list');
             $this
                 ->webDriver
                 ->wait(8)
@@ -220,7 +220,7 @@ var_dump('isLikerExist: click on liked_by and wait until likers list');
                         WebDriverBy::xpath('/html/body//ul/div/li')
                     )
                 );
-var_dump('isLikerExist: found likers list');
+            var_dump('isLikerExist: found likers list');
             $elements = $this->webDriver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
 
             $i = 0;
@@ -228,11 +228,11 @@ var_dump('isLikerExist: found likers list');
                 $element = array_shift($elements);
 
                 try {
-var_dump('isLikerExist: wait until a:last-child');
+                    var_dump('isLikerExist: wait until a:last-child');
                     $this->webDriver->wait(8)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
                     $liker = $element->findElement(WebDriverBy::cssSelector('a:last-child'))->getText();
-var_dump('isLikerExist: liker - ' . $liker);
-var_dump('isLikerExist: liker is looking for - ' . $likerIsLookingFor);
+                    var_dump('isLikerExist: liker - ' . $liker);
+                    var_dump('isLikerExist: liker is looking for - ' . $likerIsLookingFor);
                     if ($liker == $likerIsLookingFor) {
                         $this->closeTab();
                         return true;
@@ -267,16 +267,16 @@ var_dump('isLikerExist: liker is looking for - ' . $likerIsLookingFor);
             } while (true);
 
         } catch (NoSuchElementException $e) {
-var_dump('isLikerExist: liked_by not found. Find $likerIsLookingFor');
+            var_dump('isLikerExist: liked_by not found. Find $likerIsLookingFor');
 
             try {
                 $this->webDriver->findElement(WebDriverBy::xpath('//a[contains(text(), "' . $likerIsLookingFor . '")]'));
-var_dump('isLikerExist: $likerIsLookingFor founded');
+                var_dump('isLikerExist: $likerIsLookingFor founded');
 
                 $this->closeTab();
                 return true;
             } catch (NoSuchElementException $e) {
-var_dump('isLikerExist: $likerIsLookingFor not found');
+                var_dump('isLikerExist: $likerIsLookingFor not found');
 
                 $this->closeTab();
                 return false;
@@ -518,11 +518,19 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
      * @param string $name
      *
      * @return bool
+     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function isProfileClosed(string $name)
     {
         $this->openTab();
         $this->webDriver->navigate()->to('https://www.instagram.com/' . $name);
+
+        $xpath = sprintf(
+            '//*[contains(text(), "%s") or contains(text(), "%s") or contains(text(), "%s")]',
+            'This Account is Private',
+            'Sorry, this page isn\'t available',
+            'Follow ' . $name . ' to like or comment'
+        );
 
         try {
             $this
@@ -530,11 +538,11 @@ var_dump('isLikerExist: $likerIsLookingFor not found');
                 ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
-                        WebDriverBy::xpath('//*[contains(text(), "This Account is Private")]')
+                        WebDriverBy::xpath($xpath)
                     )
                 );
 
-            $this->webDriver->findElement(WebDriverBy::xpath('//*[contains(text(), "This Account is Private")]'));
+            $this->webDriver->findElement(WebDriverBy::xpath($xpath));
 
             $this->closeTab();
 
