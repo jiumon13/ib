@@ -515,19 +515,18 @@ class Instagram implements InstagramInterface
     }
 
     /**
+     * @param string $link
      * @param string $name
      *
      * @return bool
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
-    public function isProfileClosed(string $name)
+    public function isCommentsAllowed(string $link, string $name)
     {
         $this->openTab();
-        $this->webDriver->navigate()->to('https://www.instagram.com/' . $name);
+        $this->webDriver->navigate()->to($link);
 
         $xpath = sprintf(
-            '//*[contains(text(), "%s") or contains(text(), "%s") or contains(text(), "%s")]',
-            'This Account is Private',
+            '//*[contains(text(), "%s") or contains(text(), "%s")]',
             'Sorry, this page isn\'t available',
             'Follow ' . $name . ' to like or comment'
         );
@@ -535,7 +534,7 @@ class Instagram implements InstagramInterface
         try {
             $this
                 ->webDriver
-                ->wait(8)
+                ->wait(7)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
                         WebDriverBy::xpath($xpath)
