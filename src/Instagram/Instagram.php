@@ -515,26 +515,22 @@ class Instagram implements InstagramInterface
     }
 
     /**
-     * @param string $link
      * @param string $name
+     * @param string $link
      *
      * @return bool
      */
-    public function isCommentsAllowed(string $link, string $name)
+    public function isProfileClosed(string $name)
     {
         $this->openTab();
-        $this->webDriver->navigate()->to($link);
-
-        $xpath = sprintf(
-            '//*[contains(text(), "%s") or contains(text(), "%s")]',
-            'Sorry, this page isn\'t available',
-            'Follow ' . $name . ' to like or comment'
-        );
+        $this->webDriver->navigate()->to('https://www.instagram.com/' . $name);
 
         try {
+            $xpath = '//*[contains(text(), "This Account is Private")]';
+
             $this
                 ->webDriver
-                ->wait(7)
+                ->wait(5)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
                         WebDriverBy::xpath($xpath)
@@ -542,6 +538,40 @@ class Instagram implements InstagramInterface
                 );
 
             $this->webDriver->findElement(WebDriverBy::xpath($xpath));
+
+            $this->closeTab();
+
+            return true;
+        } catch (NoSuchElementException $e) {
+            $this->closeTab();
+
+            return false;
+        }
+    }
+
+    /**
+     * @param string $link
+     *
+     * @return bool
+     */
+    public function isPostDeleted(string $link)
+    {
+        $this->openTab();
+        $this->webDriver->navigate()->to($link);
+
+        try {
+            $xpath = '//*[contains(text(), "Sorry, this page isn\'t available")]';
+
+            $this
+                ->webDriver
+                ->wait(5)
+                ->until(
+                    WebDriverExpectedCondition::presenceOfElementLocated(
+                        WebDriverBy::xpath($xpath)
+                    )
+                );
+
+            $this->webDriver->findElement($xpath);
 
             $this->closeTab();
 
