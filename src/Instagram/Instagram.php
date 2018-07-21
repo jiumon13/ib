@@ -292,10 +292,11 @@ class Instagram implements InstagramInterface
     /**
      * @param string $link
      * @param string $commentatorIsLookingFor
+     * @param int    $limit
      *
      * @return bool
      */
-    public function findCommentByCommentator(string $link, string $commentatorIsLookingFor)
+    public function findCommentByCommentator(string $link, string $commentatorIsLookingFor, int $limit = self::LIMIT)
     {
         $this->openTab();
         $this->webDriver->navigate()->to($link);
@@ -363,7 +364,7 @@ class Instagram implements InstagramInterface
 
             }
 
-            if ((count($elements) == 0 && $loadMore == null) || $i > self::LIMIT) {
+            if ((count($elements) == 0 && $loadMore == null) || $i > $limit) {
                 break;
             }
 
@@ -379,10 +380,11 @@ class Instagram implements InstagramInterface
      * @param string $link
      * @param string $commentatorIsLookingFor
      * @param string $commentIsLookingFor
+     * @param int    $limit
      *
      * @return bool
      */
-    public function findComment(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor)
+    public function findComment(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor, int $limit = self::LIMIT)
     {
         $this->openTab();
         $this->webDriver->navigate()->to($link);
@@ -450,7 +452,7 @@ class Instagram implements InstagramInterface
 
             }
 
-            if ((count($elements) == 0 && $loadMore == null) || $i > self::LIMIT) {
+            if ((count($elements) == 0 && $loadMore == null) || $i > $limit) {
                 break;
             }
 
