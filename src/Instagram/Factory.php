@@ -75,7 +75,7 @@ class Factory
 
                 $webDriver->getCurrentUrl();
 
-                $instagram = new Instagram($webDriver);
+                $instagram = new Instagram($webDriver, $this->client);
             } catch (UnknownServerException $e) {
                 $instagram = $this->createNewSession();
             } catch (NoSuchWindowException $e) {
