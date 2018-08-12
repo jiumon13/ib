@@ -303,8 +303,38 @@ class Instagram implements InstagramInterface
      * @param int    $limit
      *
      * @return bool
+     *
+     * @throws \xyz13\InstagramBundle\Client\HttpClientException
      */
     public function findCommentByCommentator(string $link, string $commentatorIsLookingFor, int $limit = self::LIMIT)
+    {
+        preg_match('/https:\/\/(www.)?((instagram|ig).(com|me)\/(p\/)?[0-9a-zA-Z-_]+)/', $link, $matches);
+
+        list($code, $response) = $this->client->request('https://www.' . $matches[2] . '/?__a=1', 'POST');
+
+        $comments = $response['graphql']['shortcode_media']['edge_media_to_comment']['edges'];
+
+        if ($code !== 200) {
+            return false;
+        }
+
+        foreach ($comments as $edge) {
+            if ($commentatorIsLookingFor == $edge['node']['owner']['username']) {
+                return $edge['node']['text'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param string $link
+     * @param string $commentatorIsLookingFor
+     * @param int    $limit
+     *
+     * @return bool
+     */
+    public function findCommentByCommentatorByWebDriver(string $link, string $commentatorIsLookingFor, int $limit = self::LIMIT)
     {
         $this->openTab();
         $this->webDriver->navigate()->to($link);
@@ -392,7 +422,7 @@ class Instagram implements InstagramInterface
      *
      * @return bool
      */
-    public function findComment(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor, int $limit = self::LIMIT)
+    public function findCommentByWebDriver(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor, int $limit = self::LIMIT)
     {
         $this->openTab();
         $this->webDriver->navigate()->to($link);
@@ -468,6 +498,37 @@ class Instagram implements InstagramInterface
         } while (true);
 
         $this->closeTab();
+
+        return null;
+    }
+
+    /**
+     * @param string $link
+     * @param string $commentatorIsLookingFor
+     * @param string $commentIsLookingFor
+     * @param int    $limit
+     *
+     * @return bool
+     *
+     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     */
+    public function findComment(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor, int $limit = self::LIMIT)
+    {
+        preg_match('/https:\/\/(www.)?((instagram|ig).(com|me)\/(p\/)?[0-9a-zA-Z-_]+)/', $link, $matches);
+
+        list($code, $response) = $this->client->request('https://www.' . $matches[2] . '/?__a=1', 'POST');
+
+        $comments = $response['graphql']['shortcode_media']['edge_media_to_comment']['edges'];
+
+        if ($code !== 200) {
+            return false;
+        }
+
+        foreach ($comments as $edge) {
+            if ($commentatorIsLookingFor == $edge['node']['owner']['username'] && $commentIsLookingFor == $edge['node']['text']) {
+                return $edge['node']['text'];
+            }
+        }
 
         return null;
     }
