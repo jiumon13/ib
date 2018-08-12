@@ -8,6 +8,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\WebDriverBy;
 use Facebook\WebDriver\WebDriverExpectedCondition;
 use Facebook\WebDriver\WebDriverKeys;
+use xyz13\InstagramBundle\Client\HttpClient;
 
 class Instagram implements InstagramInterface
 {
@@ -19,13 +20,20 @@ class Instagram implements InstagramInterface
     private $webDriver;
 
     /**
+     * @var HttpClient
+     */
+    private $client;
+
+    /**
      * Instagram constructor.
      *
      * @param RemoteWebDriver $webDriver
+     * @param HttpClient      $client
      */
-    public function __construct(RemoteWebDriver $webDriver)
+    public function __construct(RemoteWebDriver $webDriver, HttpClient $client)
     {
         $this->webDriver = $webDriver;
+        $this->client = $client;
     }
 
     /**
@@ -517,38 +525,26 @@ class Instagram implements InstagramInterface
     }
 
     /**
-     * @param string $name
      * @param string $link
      *
      * @return bool
+     * @throws \xyz13\InstagramBundle\Client\HttpClientException
      */
-    public function isProfileClosed(string $name)
+    public function isCommentable(string $link)
     {
-        $this->openTab();
-        $this->webDriver->navigate()->to('https://www.instagram.com/' . $name);
+        preg_match('/https:\/\/(www.)?((instagram|ig).(com|me)\/(p\/)?[0-9a-zA-Z-_]+)/', $link, $matches);
 
-        try {
-            $xpath = '//*[contains(text(), "This Account is Private")]';
+        list($code, $response) = $this->client->request('https://www.' . $matches[2] . '/?__a=1', 'POST');
 
-            $this
-                ->webDriver
-                ->wait(5)
-                ->until(
-                    WebDriverExpectedCondition::presenceOfElementLocated(
-                        WebDriverBy::xpath($xpath)
-                    )
-                );
+        $isPostAvailable = $code !== 404;
+        $isCommentsDisabled = (bool) $response['graphql']['shortcode_media']['comments_disabled'];
+        $isProfileClosed = (bool) $response['graphql']['shortcode_media']['owner']['is_private'];
 
-            $this->webDriver->findElement(WebDriverBy::xpath($xpath));
-
-            $this->closeTab();
-
+        if ($code !== 200) {
             return true;
-        } catch (NoSuchElementException $e) {
-            $this->closeTab();
-
-            return false;
         }
+
+        return !$isCommentsDisabled && !$isProfileClosed && $isPostAvailable;
     }
 
     /**
