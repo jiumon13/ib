@@ -86,7 +86,7 @@ class Factory
 
         }
 
-        $instagram->getWebDriver()->execute(DriverCommand::MAXIMIZE_WINDOW);
+//        $instagram->getWebDriver()->execute(DriverCommand::MAXIMIZE_WINDOW);
 
         return $instagram;
     }
@@ -112,7 +112,7 @@ class Factory
             DesiredCapabilities::chrome()
         );
 
-        $instagram = new Instagram($webDriver);
+        $instagram = new Instagram($webDriver, $this->client);
 
         $session = $webDriver->getSessionID();
         $this->redis->set($this->getSessionRedisKey(), $session);

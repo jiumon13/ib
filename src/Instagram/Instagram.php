@@ -601,10 +601,6 @@ class Instagram implements InstagramInterface
         $isCommentsDisabled = (bool) $response['graphql']['shortcode_media']['comments_disabled'];
         $isProfileClosed = (bool) $response['graphql']['shortcode_media']['owner']['is_private'];
 
-        if ($code !== 200) {
-            return true;
-        }
-
         return !$isCommentsDisabled && !$isProfileClosed && $isPostAvailable;
     }
 
