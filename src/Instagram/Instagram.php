@@ -312,7 +312,7 @@ class Instagram implements InstagramInterface
 
         list($code, $response) = $this->client->request('https://www.' . $matches[2] . '/?__a=1', 'POST');
 
-        $comments = $response['graphql']['shortcode_media']['edge_media_to_comment']['edges'];
+        $comments = array_reverse($response['graphql']['shortcode_media']['edge_media_to_comment']['edges']);
 
         if ($code !== 200) {
             return false;
@@ -518,7 +518,7 @@ class Instagram implements InstagramInterface
 
         list($code, $response) = $this->client->request('https://www.' . $matches[2] . '/?__a=1', 'POST');
 
-        $comments = $response['graphql']['shortcode_media']['edge_media_to_comment']['edges'];
+        $comments = array_reverse($response['graphql']['shortcode_media']['edge_media_to_comment']['edges']);
 
         if ($code !== 200) {
             return false;
