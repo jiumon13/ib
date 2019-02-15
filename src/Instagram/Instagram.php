@@ -533,6 +533,22 @@ class Instagram implements InstagramInterface
         return null;
     }
 
+    /**
+     * @param string $link
+     *
+     * @return array
+     *
+     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     */
+    public function getPostInfo(string $link)
+    {
+        preg_match('/https:\/\/(www.)?((instagram|ig).(com|me)\/(p\/)?[0-9a-zA-Z-_]+)/', $link, $matches);
+
+        list($code, $response) = $this->client->request('https://www.' . $matches[2] . '/?__a=1', 'POST');
+
+        return $response;
+    }
+
     private function closeTab()
     {
         sleep(1);
