@@ -7,16 +7,16 @@ use Symfony\Component\HttpFoundation\Request;
 class HttpClient
 {
     /**
-     * @param        $url
+     * @param string $url
      * @param string $method
      * @param array  $data
+     * @param bool   $decode
      *
      * @return array
      *
      * @throws HttpClientException
-     * @throws \Exception
      */
-    public function request($url, $method = Request::METHOD_GET, array $data = [])
+    public function request(string $url, $method = Request::METHOD_GET, array $data = [], $decode = true)
     {
         $query = http_build_query($data);
         $curl = curl_init();
@@ -45,7 +45,11 @@ class HttpClient
         $message = curl_exec($curl);
         $code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
-        $response = json_decode($message, true);
+        if ($decode) {
+            $response = json_decode($message, true);
+        } else {
+            $response = $message;
+        }
 
         return [$code, $response];
     }

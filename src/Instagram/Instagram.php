@@ -8,6 +8,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\WebDriverBy;
 use Facebook\WebDriver\WebDriverExpectedCondition;
 use Facebook\WebDriver\WebDriverKeys;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use xyz13\InstagramBundle\Client\HttpClient;
 
 class Instagram implements InstagramInterface
@@ -660,5 +661,24 @@ class Instagram implements InstagramInterface
     public function getWebDriver()
     {
         return $this->webDriver;
+    }
+
+    /**
+     * @param string $username
+     *
+     * @return array
+     *
+     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     * @throws \Exception
+     */
+    public function getUserInfo(string $username)
+    {
+        list($code, $response) = $this->client->request('https://www.instagram.com/' . $username . '/', 'GET', [], false);
+
+        if ($code !== 200) {
+            throw new \Exception();
+        }
+
+        return $response;
     }
 }
