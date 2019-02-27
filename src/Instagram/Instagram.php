@@ -543,9 +543,7 @@ class Instagram implements InstagramInterface
      */
     public function getPostInfo(string $link)
     {
-        preg_match('/https:\/\/(www.)?((instagram|ig).(com|me)\/(p\/)?[0-9a-zA-Z-_]+)/', $link, $matches);
-
-        list($code, $response) = $this->client->request('https://www.' . $matches[2] . '/?__a=1', 'POST');
+        list($code, $response) = $this->client->request($link . '/?__a=1', 'POST');
 
         return $response;
     }
