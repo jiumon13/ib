@@ -3,22 +3,27 @@
 namespace xyz13\InstagramBundle\Instagram;
 
 use Facebook\WebDriver\Exception\NoSuchElementException;
-use Facebook\WebDriver\Remote\DesiredCapabilities;
+use Facebook\WebDriver\Exception\TimeOutException;
+use Facebook\WebDriver\Exception\WebDriverException;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
+use Facebook\WebDriver\Remote\RemoteWebElement;
 use Facebook\WebDriver\WebDriverBy;
 use Facebook\WebDriver\WebDriverExpectedCondition;
 use Facebook\WebDriver\WebDriverKeys;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use xyz13\InstagramBundle\Client\HttpClient;
+use xyz13\InstagramBundle\Client\HttpClientException;
 
 class Instagram implements InstagramInterface
 {
     const LIMIT = 50;
 
+    const PROCESSED_USER_REDIS_KEY_PATTERN = 'user-%s-processed';
+    const USERNAME_PATTERN = '$https:\/\/(www.)?instagram\.com\/([0-9a-zA-Z-_.]+).+$';
+
     /**
      * @var RemoteWebDriver
      */
-    private $webDriver;
+    private $driver;
 
     /**
      * @var HttpClient
@@ -26,30 +31,40 @@ class Instagram implements InstagramInterface
     private $client;
 
     /**
+     * @var \Redis
+     */
+    private $redis;
+
+    /**
      * Instagram constructor.
      *
      * @param RemoteWebDriver $webDriver
      * @param HttpClient      $client
+     * @param \Redis          $redis
      */
-    public function __construct(RemoteWebDriver $webDriver, HttpClient $client)
+    public function __construct(RemoteWebDriver $webDriver, HttpClient $client, \Redis $redis)
     {
-        $this->webDriver = $webDriver;
+        $this->driver = $webDriver;
         $this->client = $client;
+        $this->redis = $redis;
     }
 
     /**
      * @param string $link
      *
      * @return array
+     *
+     * @throws NoSuchElementException
+     * @throws TimeOutException
      */
     public function getCommentators(string $link)
     {
         $this->openTab();
 
-        $this->webDriver->navigate()->to($link);
+        $this->driver->navigate()->to($link);
 
         $this
-            ->webDriver
+            ->driver
             ->wait(8)
             ->until(
                 WebDriverExpectedCondition::presenceOfElementLocated(
@@ -57,7 +72,7 @@ class Instagram implements InstagramInterface
                 )
             );
 
-        $elements = $this->webDriver->findElements(WebDriverBy::xpath(
+        $elements = $this->driver->findElements(WebDriverBy::xpath(
             '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
         ));
 
@@ -91,15 +106,15 @@ class Instagram implements InstagramInterface
             }
 
             if (count($elements) == 0 && $loadMore != null) {
-                $this->webDriver->action()->moveToElement($loadMore);
+                $this->driver->action()->moveToElement($loadMore);
                 $point = $loadMore->getLocationOnScreenOnceScrolledIntoView();
-                $this->webDriver->getMouse()->mouseMove($loadMore->getCoordinates(), $point->getX(), $point->getY())->click();
+                $this->driver->getMouse()->mouseMove($loadMore->getCoordinates(), $point->getX(), $point->getY())->click();
                 sleep(rand(3, 4));
                 $loadMore->click();
                 $loadMore = null;
                 $k++;
 
-                $newElements = $this->webDriver->findElements(WebDriverBy::xpath('//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'));
+                $newElements = $this->driver->findElements(WebDriverBy::xpath('//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'));
                 $elements = array_slice($newElements, 0, -($i-$k*2));
 
             }
@@ -120,15 +135,17 @@ class Instagram implements InstagramInterface
      * @param string $link
      *
      * @return array
+     * @throws NoSuchElementException
+     * @throws TimeOutException
      */
     public function getLikers(string $link)
     {
         $this->openTab();
 
-        $this->webDriver->navigate()->to($link);
+        $this->driver->navigate()->to($link);
 
-        $this->webDriver->wait(8)->until(WebDriverExpectedCondition::elementToBeClickable(WebDriverBy::xpath('//a[contains(@href, "liked_by")]')));
-        $element = $this->webDriver->findElement(WebDriverBy::xpath('//a[contains(@href, "liked_by")]'));
+        $this->driver->wait(8)->until(WebDriverExpectedCondition::elementToBeClickable(WebDriverBy::xpath('//a[contains(@href, "liked_by")]')));
+        $element = $this->driver->findElement(WebDriverBy::xpath('//a[contains(@href, "liked_by")]'));
 
 //        $this->driver->action()->moveToElement($element);
 //        $point = $element->getLocationOnScreenOnceScrolledIntoView();
@@ -136,17 +153,17 @@ class Instagram implements InstagramInterface
         $element->click();
 
         $this
-            ->webDriver
+            ->driver
             ->wait(8)
             ->until(
                 function () {
-                    $elements = $this->webDriver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
+                    $elements = $this->driver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
 
                     return count($elements) > 10;
                 }
             );
 
-        $elements = $this->webDriver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
+        $elements = $this->driver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
 
         $i = 0;
         $likers = [];
@@ -154,7 +171,7 @@ class Instagram implements InstagramInterface
             $element = array_shift($elements);
 
             try {
-                $this->webDriver->wait(8)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
+                $this->driver->wait(8)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
                 $likers[] = $element->findElement(WebDriverBy::cssSelector('a:last-child'))->getText();
             } catch (\Exception $e) {
                 throw new WebDriverException($e->getMessage(), $e->getCode(), $e->getPrevious(), [
@@ -171,12 +188,12 @@ class Instagram implements InstagramInterface
             }
 
             if ($count <= $rand) {
-                $this->webDriver->action()->moveToElement(end($elements));
+                $this->driver->action()->moveToElement(end($elements));
                 $point = end($elements)->getLocationOnScreenOnceScrolledIntoView();
-                $this->webDriver->getMouse()->mouseMove(end($elements)->getCoordinates(), $point->getX(), $point->getY());
+                $this->driver->getMouse()->mouseMove(end($elements)->getCoordinates(), $point->getX(), $point->getY());
 
                 sleep(rand(5, 7));
-                $newElements = $this->webDriver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
+                $newElements = $this->driver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
 
                 $elements = array_slice($newElements, $i+1);
             }
@@ -195,7 +212,7 @@ class Instagram implements InstagramInterface
      *
      * @return bool
      * @throws WebDriverException
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
+     * @throws TimeOutException
      */
     public function isLikerExist(string $link, string $likerIsLookingFor)
     {
@@ -204,13 +221,13 @@ class Instagram implements InstagramInterface
         var_dump('isLikerExist: tab is opened');
 
         var_dump('isLikerExist: navigate');
-        $this->webDriver->navigate()->to($link);
-        var_dump('isLikerExist: current url = ' . $this->webDriver->getCurrentURL());
+        $this->driver->navigate()->to($link);
+        var_dump('isLikerExist: current url = ' . $this->driver->getCurrentURL());
 
         try {
             var_dump('isLikerExist: wait until liked by');
 
-            $this->webDriver->wait(5)->until(
+            $this->driver->wait(5)->until(
                 WebDriverExpectedCondition::elementToBeClickable(
                     WebDriverBy::xpath(
                         '//a[contains(@href, "liked_by")]'
@@ -218,11 +235,11 @@ class Instagram implements InstagramInterface
                 )
             );
             var_dump('isLikerExist: liked_by founded');
-            $element = $this->webDriver->findElement(WebDriverBy::xpath('//a[contains(@href, "liked_by")]'));
+            $element = $this->driver->findElement(WebDriverBy::xpath('//a[contains(@href, "liked_by")]'));
             $element->click();
             var_dump('isLikerExist: click on liked_by and wait until likers list');
             $this
-                ->webDriver
+                ->driver
                 ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
@@ -230,7 +247,7 @@ class Instagram implements InstagramInterface
                     )
                 );
             var_dump('isLikerExist: found likers list');
-            $elements = $this->webDriver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
+            $elements = $this->driver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
 
             $i = 0;
             do {
@@ -238,7 +255,7 @@ class Instagram implements InstagramInterface
 
                 try {
                     var_dump('isLikerExist: wait until a:last-child');
-                    $this->webDriver->wait(8)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
+                    $this->driver->wait(8)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('a:last-child')));
                     $liker = $element->findElement(WebDriverBy::cssSelector('a:last-child'))->getText();
                     var_dump('isLikerExist: liker - ' . $liker);
                     var_dump('isLikerExist: liker is looking for - ' . $likerIsLookingFor);
@@ -258,12 +275,12 @@ class Instagram implements InstagramInterface
 
                 $rand = rand(7, 9);
                 if (count($elements) <= $rand) {
-                    $this->webDriver->action()->moveToElement($element);
+                    $this->driver->action()->moveToElement($element);
                     $point = $element->getLocationOnScreenOnceScrolledIntoView();
-                    $this->webDriver->getMouse()->mouseMove($element->getCoordinates(), $point->getX(), $point->getY());
+                    $this->driver->getMouse()->mouseMove($element->getCoordinates(), $point->getX(), $point->getY());
 
                     sleep(rand(5, 6));
-                    $newElements = $this->webDriver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
+                    $newElements = $this->driver->findElements(WebDriverBy::xpath('/html/body//ul/div/li'));
 
                     $elements = array_slice($newElements, $i+1);
                 }
@@ -279,7 +296,7 @@ class Instagram implements InstagramInterface
             var_dump('isLikerExist: liked_by not found. Find $likerIsLookingFor');
 
             try {
-                $this->webDriver->findElement(WebDriverBy::xpath('//a[contains(text(), "' . $likerIsLookingFor . '")]'));
+                $this->driver->findElement(WebDriverBy::xpath('//a[contains(text(), "' . $likerIsLookingFor . '")]'));
                 var_dump('isLikerExist: $likerIsLookingFor founded');
 
                 $this->closeTab();
@@ -305,7 +322,7 @@ class Instagram implements InstagramInterface
      *
      * @return bool
      *
-     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     * @throws HttpClientException
      */
     public function findCommentByCommentator(string $link, string $commentatorIsLookingFor, int $limit = self::LIMIT)
     {
@@ -334,15 +351,16 @@ class Instagram implements InstagramInterface
      * @param int    $limit
      *
      * @return bool
+     * @throws TimeOutException
      */
     public function findCommentByCommentatorByWebDriver(string $link, string $commentatorIsLookingFor, int $limit = self::LIMIT)
     {
         $this->openTab();
-        $this->webDriver->navigate()->to($link);
+        $this->driver->navigate()->to($link);
 
         try {
             $this
-                ->webDriver
+                ->driver
                 ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
@@ -350,7 +368,7 @@ class Instagram implements InstagramInterface
                     )
                 );
 
-            $elements = $this->webDriver->findElements(WebDriverBy::xpath(
+            $elements = $this->driver->findElements(WebDriverBy::xpath(
                 '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
             ));
         } catch (NoSuchElementException $e) {
@@ -383,16 +401,16 @@ class Instagram implements InstagramInterface
 
             if (count($elements) == 0 && $loadMore != null) {
 
-                $this->webDriver->action()->moveToElement($loadMore);
+                $this->driver->action()->moveToElement($loadMore);
                 $point = $loadMore->getLocationOnScreenOnceScrolledIntoView();
-                $this->webDriver->getMouse()->mouseMove($loadMore->getCoordinates(), $point->getX(), $point->getY())->click();
+                $this->driver->getMouse()->mouseMove($loadMore->getCoordinates(), $point->getX(), $point->getY())->click();
                 sleep(rand(3, 4));
                 $loadMore->click();
                 $loadMore = null;
                 $k++;
 
                 $newElements = $this
-                    ->webDriver
+                    ->driver
                     ->findElements(
                         WebDriverBy::xpath(
                             '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
@@ -422,15 +440,16 @@ class Instagram implements InstagramInterface
      * @param int    $limit
      *
      * @return bool
+     * @throws TimeOutException
      */
     public function findCommentByWebDriver(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor, int $limit = self::LIMIT)
     {
         $this->openTab();
-        $this->webDriver->navigate()->to($link);
+        $this->driver->navigate()->to($link);
 
         try {
             $this
-                ->webDriver
+                ->driver
                 ->wait(8)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
@@ -438,7 +457,7 @@ class Instagram implements InstagramInterface
                     )
                 );
 
-            $elements = $this->webDriver->findElements(WebDriverBy::xpath(
+            $elements = $this->driver->findElements(WebDriverBy::xpath(
                 '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
             ));
         } catch (NoSuchElementException $e) {
@@ -471,16 +490,16 @@ class Instagram implements InstagramInterface
 
             if (count($elements) == 0 && $loadMore != null) {
 
-                $this->webDriver->action()->moveToElement($loadMore);
+                $this->driver->action()->moveToElement($loadMore);
                 $point = $loadMore->getLocationOnScreenOnceScrolledIntoView();
-                $this->webDriver->getMouse()->mouseMove($loadMore->getCoordinates(), $point->getX(), $point->getY())->click();
+                $this->driver->getMouse()->mouseMove($loadMore->getCoordinates(), $point->getX(), $point->getY())->click();
                 sleep(rand(3, 4));
                 $loadMore->click();
                 $loadMore = null;
                 $k++;
 
                 $newElements = $this
-                    ->webDriver
+                    ->driver
                     ->findElements(
                         WebDriverBy::xpath(
                             '//*[@id="react-root"]/section/main/div/div/article/div[2]/div[1]/ul/li'
@@ -511,7 +530,7 @@ class Instagram implements InstagramInterface
      *
      * @return bool
      *
-     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     * @throws HttpClientException
      */
     public function findComment(string $link, string $commentatorIsLookingFor, string $commentIsLookingFor, int $limit = self::LIMIT)
     {
@@ -539,7 +558,7 @@ class Instagram implements InstagramInterface
      *
      * @return array
      *
-     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     * @throws HttpClientException
      */
     public function getPostInfo(string $link)
     {
@@ -552,7 +571,7 @@ class Instagram implements InstagramInterface
     {
         sleep(1);
         $this
-            ->webDriver
+            ->driver
             ->wait(5)
             ->until(
                 WebDriverExpectedCondition::presenceOfElementLocated(
@@ -560,10 +579,10 @@ class Instagram implements InstagramInterface
                 )
             );
 
-        $body = $this->webDriver->findElement(WebDriverBy::tagName('body'));
-        $this->webDriver->action()->moveToElement($body);
+        $body = $this->driver->findElement(WebDriverBy::tagName('body'));
+        $this->driver->action()->moveToElement($body);
         $point = $body->getLocationOnScreenOnceScrolledIntoView();
-        $this->webDriver->getMouse()->mouseMove($body->getCoordinates(), $point->getX(), $point->getY())->click();
+        $this->driver->getMouse()->mouseMove($body->getCoordinates(), $point->getX(), $point->getY())->click();
         $body->sendKeys(WebDriverKeys::CONTROL . '+' . 'w');
         sleep(1);
     }
@@ -572,7 +591,7 @@ class Instagram implements InstagramInterface
     {
         sleep(1);
         $this
-            ->webDriver
+            ->driver
             ->wait(5)
             ->until(
                 WebDriverExpectedCondition::presenceOfElementLocated(
@@ -580,10 +599,10 @@ class Instagram implements InstagramInterface
                 )
             );
 
-        $body = $this->webDriver->findElement(WebDriverBy::tagName('body'));
-        $this->webDriver->action()->moveToElement($body);
+        $body = $this->driver->findElement(WebDriverBy::tagName('body'));
+        $this->driver->action()->moveToElement($body);
         $point = $body->getLocationOnScreenOnceScrolledIntoView();
-        $this->webDriver->getMouse()->mouseMove($body->getCoordinates(), $point->getX(), $point->getY())->click();
+        $this->driver->getMouse()->mouseMove($body->getCoordinates(), $point->getX(), $point->getY())->click();
         $body->sendKeys(WebDriverKeys::CONTROL . '+' . 't');
         sleep(1);
     }
@@ -604,7 +623,7 @@ class Instagram implements InstagramInterface
      * @param string $link
      *
      * @return bool
-     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     * @throws HttpClientException
      */
     public function isCommentable(string $link)
     {
@@ -623,17 +642,19 @@ class Instagram implements InstagramInterface
      * @param string $link
      *
      * @return bool
+     *
+     * @throws TimeOutException
      */
     public function isPostDeleted(string $link)
     {
         $this->openTab();
-        $this->webDriver->navigate()->to($link);
+        $this->driver->navigate()->to($link);
 
         try {
             $xpath = '//*[contains(text(), "Sorry, this page isn\'t available")]';
 
             $this
-                ->webDriver
+                ->driver
                 ->wait(5)
                 ->until(
                     WebDriverExpectedCondition::presenceOfElementLocated(
@@ -641,7 +662,7 @@ class Instagram implements InstagramInterface
                     )
                 );
 
-            $this->webDriver->findElement($xpath);
+            $this->driver->findElement($xpath);
 
             $this->closeTab();
 
@@ -656,9 +677,9 @@ class Instagram implements InstagramInterface
     /**
      * @return RemoteWebDriver
      */
-    public function getWebDriver()
+    public function getDriver()
     {
-        return $this->webDriver;
+        return $this->driver;
     }
 
     /**
@@ -666,7 +687,7 @@ class Instagram implements InstagramInterface
      *
      * @return array
      *
-     * @throws \xyz13\InstagramBundle\Client\HttpClientException
+     * @throws HttpClientException
      * @throws \Exception
      */
     public function getUserInfo(string $username)
@@ -678,5 +699,163 @@ class Instagram implements InstagramInterface
         }
 
         return $response;
+    }
+
+    public function mass(string $url, $looking = false, $liking = false, $commenting = false, $following = false)
+    {
+        preg_match(self::USERNAME_PATTERN, $url, $matches);
+        $username = $matches[2];
+
+        if ($this->isUserProcessed($username)) {
+            return false;
+        }
+
+        if ($this->driver->getCurrentURL() != $url) {
+            $this->driver->get($url);
+        }
+
+        if ($following) {
+            $this->follow();
+        }
+
+        if ($looking && $this->isStoriesExist()) {
+            $this->watchStories();
+        }
+
+        if ($liking) {
+            $this->like();
+        }
+
+        if ($commenting) {
+            $this->comment();
+        }
+
+        $this->setUserProcessed($username);
+
+        return true;
+    }
+
+    /**
+     * @param string $username
+     *
+     * @return string
+     */
+    private function getRedisKey(string $username)
+    {
+        return sprintf(self::PROCESSED_USER_REDIS_KEY_PATTERN, $username);
+    }
+
+    /**
+     * @param string $username
+     *
+     * @return bool
+     */
+    private function isUserProcessed(string $username)
+    {
+        return (bool) $this->redis->exists($this->getRedisKey($username));
+    }
+
+    /**
+     * @param string $username
+     *
+     * @return bool
+     */
+    private function setUserProcessed(string $username)
+    {
+        return $this->redis->set($this->getRedisKey($username), true, 86400);
+    }
+
+    /**
+     * @return bool
+     */
+    private function isStoriesExist()
+    {
+        sleep(1);
+
+        $this
+            ->driver
+            ->executeScript("
+                if (document.getElementsByTagName('canvas').item(0).getContext('2d').strokeStyle instanceof CanvasGradient) {
+                    document.getElementsByTagName('html').item(0).setAttribute('stories-exist', true);
+                } else {
+                    document.getElementsByTagName('html').item(0).setAttribute('stories-exist', false);
+                };
+        ");
+
+        sleep(1);
+
+        return $this->driver->findElement(WebDriverBy::cssSelector('html'))->getAttribute('stories-exist') == "true";
+    }
+
+    private function watchStories()
+    {
+        // Открываем Stories
+        $this->click(WebDriverBy::xpath('//span[contains(@role, "link")]'));
+
+        // Ждем пока карусель сториз откроется
+        $this->driver->wait(30)->until(
+            WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector(
+                '.carul'
+            ))
+        );
+
+        return true;
+    }
+
+    private function like()
+    {
+        $this->click(WebDriverBy::xpath('//span[@aria-label="Like"]'));
+
+        sleep(rand(5, 10));
+
+        return true;
+    }
+
+    private function comment($text = '❤️')
+    {
+        $element = $this->click(WebDriverBy::cssSelector('textarea[autocorrect="off"]'));
+
+        sleep(rand(5, 10));
+
+        $element->sendKeys(str_repeat($text, rand(3, 10)));
+
+        sleep(rand(1, 3));
+
+        $element->sendKeys(WebDriverKeys::RETURN_KEY);
+
+        return true;
+    }
+
+    private function follow()
+    {
+        return true;
+    }
+
+    /**
+     * @param WebDriverBy $webDriverBy
+     * @param int         $wait
+     *
+     * @return RemoteWebElement
+     *
+     * @throws NoSuchElementException
+     * @throws TimeOutException
+     */
+    private function click(WebDriverBy $webDriverBy, int $wait = 30)
+    {
+        $this->driver->wait($wait)->until(WebDriverExpectedCondition::presenceOfElementLocated($webDriverBy));
+
+        $element = $this->driver->findElement($webDriverBy);
+
+        sleep(rand(1, 2));
+
+        $element->getLocationOnScreenOnceScrolledIntoView();
+
+        sleep(rand(1, 2));
+
+        $this->driver->getMouse()->click($element->getCoordinates());
+
+        sleep(rand(1, 2));
+
+        return $element;
     }
 }
