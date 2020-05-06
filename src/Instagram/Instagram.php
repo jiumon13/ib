@@ -545,7 +545,8 @@ class Instagram implements InstagramInterface
         }
 
         foreach ($comments as $edge) {
-            if ($commentatorIsLookingFor == $edge['node']['owner']['username'] && $commentIsLookingFor == $edge['node']['text']) {
+            $comment = \Normalizer::normalize($edge['node']['text']);
+            if ($commentatorIsLookingFor == $edge['node']['owner']['username'] && $commentIsLookingFor == $comment) {
                 return $edge['node']['text'];
             }
         }
