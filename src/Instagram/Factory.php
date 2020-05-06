@@ -112,7 +112,7 @@ class Factory
             DesiredCapabilities::chrome()
         );
 
-        $instagram = new Instagram($webDriver, $this->client);
+        $instagram = new Instagram($webDriver, $this->client, $this->redis);
 
         $session = $webDriver->getSessionID();
         $this->redis->set($this->getSessionRedisKey(), $session);
