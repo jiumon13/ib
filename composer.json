@@ -1,7 +1,7 @@
 {
-  "name": "xyz13/instagram-bundle",
+  "name": "jiumon13/ib",
   "type": "symfony-bundle",
-  "description": "Instagram Web Bundle",
+  "description": "bundle",
   "keywords": ["symfony"],
   "autoload": {
     "psr-4": {
@@ -10,7 +10,7 @@
   },
   "require": {
     "php": ">=7.0.0",
-    "facebook/webdriver": "^1.5",
+    "facebook/webdriver": "^1.7",
     "guzzlehttp/psr7": "^1.4",
     "symfony/framework-bundle": "^3.1",
     "ext-intl": "*"
